@@ -34,7 +34,7 @@ Scanner PRV no pretende reemplazar a Nmap: aprovecha toda su potencia y la prese
 ### Opción A — Instalación automática (Linux/Mac, recomendado)
 
 ```bash
-git clone https://github.com/tu-usuario/Scanner-PRV.git
+git clone https://github.com/rogelsergio111-hub/Scanner-PRV.git
 cd Scanner-PRV
 chmod +x install.sh
 ./install.sh
@@ -46,7 +46,7 @@ El script instala `nmap` si falta, crea un entorno virtual (`venv`) e instala la
 
 **Linux/Mac:**
 ```bash
-git clone https://github.com/tu-usuario/Scanner-PRV.git
+git clone https://github.com/rogelsergio111-hub/Scanner-PRV.git
 cd Scanner-PRV
 sudo apt install nmap python3-venv python3-full -y   # Debian/Ubuntu
 python3 -m venv venv
@@ -56,7 +56,7 @@ pip install -r requirements.txt
 
 **Windows (PowerShell):**
 ```powershell
-git clone https://github.com/tu-usuario/Scanner-PRV.git
+git clone https://github.com/rogelsergio111-hub/Scanner-PRV.git
 cd Scanner-PRV
 python -m venv venv
 venv\Scripts\activate
