@@ -7,3 +7,4 @@ historial/*
 logs/*
 !logs/.gitkeep
 config/config.json
+venv/
