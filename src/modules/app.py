@@ -12,6 +12,7 @@ from . import history
 from . import reports
 from . import learning_mode
 from . import security_analysis
+from . import validators
 from .config_manager import ConfigManager
 from .scanner_engine import ScannerEngine, ScannerEngineError
 
@@ -88,9 +89,12 @@ class ScannerPRVApp:
     def _flujo_escaneo(self, tipo):
         tema = self.config.get("tema")
         ui.titulo_seccion(f"ESCANEO: {tipo.upper()}", tema)
-        objetivo = ui.entrada("IP o dominio a analizar: ", tema).strip()
-        if not objetivo:
-            ui.mensaje_error("Debes indicar un objetivo.")
+        objetivo_bruto = ui.entrada("IP o dominio a analizar: ", tema).strip()
+
+        try:
+            objetivo = validators.validar_objetivo(objetivo_bruto)
+        except validators.ValidationError as e:
+            ui.mensaje_error(str(e))
             ui.pausar()
             return
 
@@ -110,12 +114,15 @@ class ScannerPRVApp:
                 ui.barra_progreso("Ejecutando escaneo completo...", segundos=2.5, tema=tema)
                 resultado = motor.escaneo_completo(objetivo)
             elif tipo == "personalizado":
-                puertos = ui.entrada("Puertos (ej: 22,80,443 o 1-1000): ", tema).strip()
+                puertos_bruto = ui.entrada("Puertos (ej: 22,80,443 o 1-1000): ", tema).strip()
+                puertos = validators.validar_puertos(puertos_bruto)
                 ui.barra_progreso("Ejecutando escaneo personalizado...", tema=tema)
                 resultado = motor.escaneo_personalizado(objetivo, puertos)
             elif tipo == "rango":
-                inicio = ui.entrada("Puerto inicial: ", tema).strip()
-                fin = ui.entrada("Puerto final: ", tema).strip()
+                inicio_bruto = ui.entrada("Puerto inicial: ", tema).strip()
+                fin_bruto = ui.entrada("Puerto final: ", tema).strip()
+                inicio = validators.validar_puerto_individual(inicio_bruto, "puerto inicial")
+                fin = validators.validar_puerto_individual(fin_bruto, "puerto final")
                 ui.barra_progreso("Escaneando rango de puertos...", tema=tema)
                 resultado = motor.escaneo_rango_puertos(objetivo, inicio, fin)
             elif tipo == "so":
@@ -123,13 +130,18 @@ class ScannerPRVApp:
                 ui.barra_progreso("Detectando sistema operativo...", tema=tema)
                 resultado = motor.deteccion_sistema_operativo(objetivo)
             elif tipo == "servicios":
-                puertos = ui.entrada(
+                puertos_bruto = ui.entrada(
                     f"Puertos a analizar [{self.config.get('puertos_por_defecto')}]: ", tema
                 ).strip() or self.config.get("puertos_por_defecto")
+                puertos = validators.validar_puertos(puertos_bruto)
                 ui.barra_progreso("Detectando servicios y versiones...", tema=tema)
                 resultado = motor.deteccion_servicios(objetivo, puertos)
             else:
                 resultado = None
+        except validators.ValidationError as e:
+            ui.mensaje_error(str(e))
+            ui.pausar()
+            return
         except ScannerEngineError as e:
             ui.mensaje_error(str(e))
             ui.pausar()

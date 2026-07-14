@@ -3,6 +3,7 @@ reports.py
 Genera reportes de auditoría en distintos formatos: TXT, JSON, HTML y PDF.
 """
 
+import html
 import json
 import os
 from datetime import datetime
@@ -84,19 +85,25 @@ def exportar_html(info_host, analisis_seguridad, carpeta):
     payload = _construir_payload(info_host, analisis_seguridad)
     ruta = os.path.join(carpeta, _nombre_base(info_host) + ".html")
 
+    # Los datos de puertos/servicio/version/hostname/SO provienen del equipo
+    # escaneado (banners remotos), no de Scanner PRV, así que se escapan
+    # antes de insertarlos en el HTML para evitar XSS almacenado.
+    def e(valor):
+        return html.escape(str(valor), quote=True)
+
     filas_puertos = "".join(
-        f"<tr><td>{p['puerto']}</td><td>{p['protocolo']}</td><td>{p['estado']}</td>"
-        f"<td>{p['servicio']}</td><td>{p['version']}</td></tr>"
+        f"<tr><td>{e(p['puerto'])}</td><td>{e(p['protocolo'])}</td><td>{e(p['estado'])}</td>"
+        f"<td>{e(p['servicio'])}</td><td>{e(p['version'])}</td></tr>"
         for p in payload["puertos"]
     )
-    hallazgos_html = "".join(f"<li>{h}</li>" for h in payload["hallazgos"]) or "<li>Sin hallazgos relevantes</li>"
-    recomendaciones_html = "".join(f"<li>{r}</li>" for r in payload["recomendaciones"])
+    hallazgos_html = "".join(f"<li>{e(h)}</li>" for h in payload["hallazgos"]) or "<li>Sin hallazgos relevantes</li>"
+    recomendaciones_html = "".join(f"<li>{e(r)}</li>" for r in payload["recomendaciones"])
 
-    html = f"""<!DOCTYPE html>
+    contenido_html = f"""<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Reporte Scanner PRV - {payload['equipo_analizado']}</title>
+<title>Reporte Scanner PRV - {e(payload['equipo_analizado'])}</title>
 <style>
   body {{ font-family: Arial, sans-serif; background:#0f172a; color:#e2e8f0; padding:30px; }}
   h1 {{ color:#22c55e; }}
@@ -109,12 +116,12 @@ def exportar_html(info_host, analisis_seguridad, carpeta):
 </head>
 <body>
   <h1>Scanner PRV — Reporte de auditoría</h1>
-  <p>Fecha: {payload['fecha']} — Hora: {payload['hora']}</p>
+  <p>Fecha: {e(payload['fecha'])} — Hora: {e(payload['hora'])}</p>
   <h2>Información del equipo</h2>
-  <p>IP: {payload['equipo_analizado']} ({payload['hostname']})<br>
-     Sistema operativo: {payload['sistema_operativo']}<br>
-     MAC: {payload['mac']}<br>
-     Duración del análisis: {payload['duracion_segundos']} s</p>
+  <p>IP: {e(payload['equipo_analizado'])} ({e(payload['hostname'])})<br>
+     Sistema operativo: {e(payload['sistema_operativo'])}<br>
+     MAC: {e(payload['mac'])}<br>
+     Duración del análisis: {e(payload['duracion_segundos'])} s</p>
 
   <h2>Puertos y servicios</h2>
   <table>
@@ -123,7 +130,7 @@ def exportar_html(info_host, analisis_seguridad, carpeta):
   </table>
 
   <h2>Nivel de seguridad</h2>
-  <p class="puntaje">{payload['nivel_seguridad']}/100 — {payload['estado_seguridad']}</p>
+  <p class="puntaje">{e(payload['nivel_seguridad'])}/100 — {e(payload['estado_seguridad'])}</p>
 
   <h2>Hallazgos</h2>
   <ul>{hallazgos_html}</ul>
@@ -134,7 +141,7 @@ def exportar_html(info_host, analisis_seguridad, carpeta):
 </html>"""
 
     with open(ruta, "w", encoding="utf-8") as f:
-        f.write(html)
+        f.write(contenido_html)
     return ruta
 
 
